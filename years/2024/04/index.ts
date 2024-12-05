@@ -14,16 +14,112 @@ const DAY = 4;
 // problem url  : https://adventofcode.com/2024/day/4
 
 async function p2024day4_part1(input: string, ...params: any[]) {
-	return "Not implemented";
+	const lines = input.split("\n").map(line => line.trim());
+	const columns = [...lines[0]].map((_, index) => lines.map(line => line[index]).join(""));
+	const diagonalsDownRight1 = [...lines[0]].map((_, index) => {
+		const diagonal = [];
+		for (let i = 0; i < lines.length; i++) {
+			const line = lines[i];
+			if (line[index + i]) diagonal.push(line[index + i]);
+		}
+		return diagonal.join("");
+	});
+	const diagonalsDownRight2 = [...columns[0]].map((_, index) => {
+		if (index == 0) return "";
+		const diagonal = [];
+		for (let i = 0; i < lines.length; i++) {
+			const line = lines[i + index];
+			if (line && line[i]) diagonal.push(line[i]);
+		}
+		return diagonal.join("");
+	});
+	const diagonalsDownLeft1 = [...lines[0]].map((_, index) => {
+		const diagonal = [];
+		for (let i = 0; i < lines.length; i++) {
+			const line = lines[i];
+			if (line[index - i]) diagonal.push(line[index - i]);
+		}
+		return diagonal.join("");
+	});
+	const diagonalsDownLeft2 = [...columns[0]].map((_, index) => {
+		if (index == 0) return "";
+		const diagonal = [];
+		for (let i = 0; i < lines.length; i++) {
+			const line = lines[i + index];
+			if (line && line[columns[0].length - i - 1]) diagonal.push(line[columns[0].length - i - 1]);
+		}
+		return diagonal.join("");
+	});
+	const allLines = [...lines, ...columns, ...diagonalsDownRight1, ...diagonalsDownRight2, ...diagonalsDownLeft1, ...diagonalsDownLeft2];
+	const numberOfTimesXmasAppears = allLines.reduce((acc, line) => {
+		return acc + (line.match(/XMAS/g) || []).length + (line.split("").reverse().join("").match(/XMAS/g) || []).length;
+	}, 0);
+	return numberOfTimesXmasAppears;
 }
 
 async function p2024day4_part2(input: string, ...params: any[]) {
-	return "Not implemented";
+	var counter = 0;
+	const lines = input.split("\n").map(line => line.trim());
+	for (let row = 0; row < lines.length; row++) {
+		for (let column = 0; column < lines[row].length; column++) {
+			if (lines[row][column] == "A") {
+				var diagonal1 = false;
+				var diagonal2 = false;
+
+				if (lines[row - 1] && lines[row - 1][column - 1] == "M" &&
+					lines[row + 1] && lines[row + 1][column + 1] == "S") {
+					diagonal1 = true;
+				}
+				if (lines[row - 1] && lines[row - 1][column - 1] == "S" &&
+					lines[row + 1] && lines[row + 1][column + 1] == "M") {
+					diagonal1 = true;
+				}
+				if (lines[row - 1] && lines[row - 1][column + 1] == "M" &&
+					lines[row + 1] && lines[row + 1][column - 1] == "S") {
+					diagonal2 = true;
+				}
+				if (lines[row - 1] && lines[row - 1][column + 1] == "S" &&
+					lines[row + 1] && lines[row + 1][column - 1] == "M") {
+					diagonal2 = true;
+				}
+				if (diagonal1 && diagonal2) {
+					counter++;
+				}
+			}
+		}
+	}
+	return counter;
 }
 
 async function run() {
-	const part1tests: TestCase[] = [];
-	const part2tests: TestCase[] = [];
+	const part1tests: TestCase[] = [{
+		input: `MMMSXXMASM
+				MSAMXMSMSA
+				AMXSXMAAMM
+				MSAMASMSMX
+				XMASAMXAMM
+				XXAMMXXAMA
+				SMSMSASXSS
+				SAXAMASAAA
+				MAMMMXMMMM
+				MXMXAXMASX`,
+		expected: `18`
+	}];
+	const part2tests: TestCase[] = [
+		{
+			input: `MMMSXXMASM
+					MSAMXMSMSA
+					AMXSXMAAMM
+					MSAMASMSMX
+					XMASAMXAMM
+					XXAMMXXAMA
+					SMSMSASXSS
+					SAXAMASAAA
+					MAMMMXMMMM
+					MXMXAXMASX`,
+			expected: `9`
+		}
+	];
 
 	const [p1testsNormalized, p2testsNormalized] = normalizeTestCases(part1tests, part2tests);
 
