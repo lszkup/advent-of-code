@@ -14,16 +14,193 @@ const DAY = 6;
 // problem url  : https://adventofcode.com/2024/day/6
 
 async function p2024day6_part1(input: string, ...params: any[]) {
-	return "Not implemented";
+	const lines = input.split("\n").map(line => [...line.trim()]);
+	var startingPositionX = 0;
+	var startingPositionY = 0;
+	for (let row = 0; row < lines.length; row++) {
+		for (let column = 0; column < lines[row].length; column++) {
+			if (lines[row][column] === "^") {
+				startingPositionX = column;
+				startingPositionY = row;
+				break;
+			}
+		}
+	}
+	return getNumberOfVisitedCells(lines, startingPositionX, startingPositionY, lines.length * lines[0].length * 1000);
+}
+
+function getNumberOfVisitedCells(lines: string[][], startingPositionX: number, startingPositionY: number, maxNumberOfSteps: number) {
+	var direction = "up";
+	var numberOfVisitedCells = 0;
+	var numberOfSteps = 0;
+	var spinningInPlace = 0;
+	while (startingPositionX >= 0 && startingPositionX < lines[0].length && startingPositionY >= 0 && startingPositionY < lines.length) {
+		if (numberOfSteps >= maxNumberOfSteps || spinningInPlace >= 4) {
+			numberOfSteps = -1;
+			break;
+		}
+
+		numberOfSteps++;
+		if (lines[startingPositionY][startingPositionX] !== "X") {
+			lines[startingPositionY][startingPositionX] = "X";
+			numberOfVisitedCells++;
+		}
+
+		if (direction === "up") {
+			if (lines[startingPositionY - 1] && lines[startingPositionY - 1][startingPositionX] === "#") {
+				direction = "right";
+				spinningInPlace++;
+			} else {
+				startingPositionY--;
+				spinningInPlace = 0;
+			}
+		} else if (direction === "right") {
+			if (lines[startingPositionY] && lines[startingPositionY][startingPositionX + 1] === "#") {
+				direction = "down";
+				spinningInPlace++;
+			} else {
+				startingPositionX++;
+				spinningInPlace = 0;
+			}
+		} else if (direction === "down") {
+			if (lines[startingPositionY + 1] && lines[startingPositionY + 1][startingPositionX] === "#") {
+				direction = "left";
+				spinningInPlace++;
+			} else {
+				startingPositionY++;
+				spinningInPlace = 0;
+			}
+		} else if (direction === "left") {
+			if (lines[startingPositionY] && lines[startingPositionY][startingPositionX - 1] === "#") {
+				direction = "up";
+				spinningInPlace++;
+			} else {
+				startingPositionX--;
+				spinningInPlace = 0;
+			}
+		}
+	}
+	return numberOfVisitedCells;
+}
+
+function getNumberOfSteps(lines: string[][], startingPositionX: number, startingPositionY: number, maxNumberOfSteps: number) {
+	var direction = "up";
+	var numberOfVisitedCells = 0;
+	var numberOfSteps = 0;
+	var spinningInPlace = 0;
+	while (startingPositionX >= 0 && startingPositionX < lines[0].length && startingPositionY >= 0 && startingPositionY < lines.length) {
+		if (numberOfSteps >= maxNumberOfSteps || spinningInPlace >= 4) {
+			numberOfSteps = -1;
+			break;
+		}
+
+		numberOfSteps++;
+		if (lines[startingPositionY][startingPositionX] !== "X") {
+			lines[startingPositionY][startingPositionX] = "X";
+			numberOfVisitedCells++;
+		}
+
+		if (direction === "up") {
+			if (lines[startingPositionY - 1] && lines[startingPositionY - 1][startingPositionX] === "#") {
+				direction = "right";
+				spinningInPlace++;
+			} else {
+				startingPositionY--;
+				spinningInPlace = 0;
+			}
+		} else if (direction === "right") {
+			if (lines[startingPositionY] && lines[startingPositionY][startingPositionX + 1] === "#") {
+				direction = "down";
+				spinningInPlace++;
+			} else {
+				startingPositionX++;
+				spinningInPlace = 0;
+			}
+		} else if (direction === "down") {
+			if (lines[startingPositionY + 1] && lines[startingPositionY + 1][startingPositionX] === "#") {
+				direction = "left";
+				spinningInPlace++;
+			} else {
+				startingPositionY++;
+				spinningInPlace = 0;
+			}
+		} else if (direction === "left") {
+			if (lines[startingPositionY] && lines[startingPositionY][startingPositionX - 1] === "#") {
+				direction = "up";
+				spinningInPlace++;
+			} else {
+				startingPositionX--;
+				spinningInPlace = 0;
+			}
+		}
+	}
+	return numberOfSteps;
 }
 
 async function p2024day6_part2(input: string, ...params: any[]) {
-	return "Not implemented";
+	const lines = input.split("\n").map(line => [...line.trim()]);
+	var startingPositionX = 0;
+	var startingPositionY = 0;
+	for (let row = 0; row < lines.length; row++) {
+		for (let column = 0; column < lines[row].length; column++) {
+			if (lines[row][column] === "^") {
+				startingPositionX = column;
+				startingPositionY = row;
+				break;
+			}
+		}
+	}
+	const minNumberOfSteps = getNumberOfSteps(lines, startingPositionX, startingPositionY, lines.length * lines[0].length * 1000);
+	var obstaclesCounter = 0;
+	for (let row = 0; row < lines.length; row++) {
+		for (let column = 0; column < lines[row].length; column++) {
+			if (column === startingPositionX && row === startingPositionY - 1) {
+				continue;
+			}
+			const internalLines = input.split("\n").map(line => [...line.trim()]);
+			if (internalLines[row][column] !== "^" && internalLines[row][column] !== "#") {
+				internalLines[row][column] = "#";
+				const stepsCount = getNumberOfSteps(internalLines, startingPositionX, startingPositionY, minNumberOfSteps * 3);
+				if (stepsCount === -1) {
+					obstaclesCounter++;
+				}
+			}
+		}
+	}
+	return obstaclesCounter;
 }
 
 async function run() {
-	const part1tests: TestCase[] = [];
-	const part2tests: TestCase[] = [];
+	const part1tests: TestCase[] = [
+		{
+			input: `....#.....
+					.........#
+					..........
+					..#.......
+					.......#..
+					..........
+					.#..^.....
+					........#.
+					#.........
+					......#...`,
+			expected: "41",
+		}
+	];
+	const part2tests: TestCase[] = [
+		{
+			input: `....#.....
+					.........#
+					..........
+					..#.......
+					.......#..
+					..........
+					.#..^.....
+					........#.
+					#.........
+					......#...`,
+			expected: "6",
+		}
+	];
 
 	const [p1testsNormalized, p2testsNormalized] = normalizeTestCases(part1tests, part2tests);
 
