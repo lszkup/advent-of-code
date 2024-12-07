@@ -27,6 +27,7 @@
 		"chalk": "^4.1.2",
 		"core-js": "^3.33.3",
 		"cross-fetch": "^3.1.5",
+		"expressionparser": "^1.1.5",
 		"fast-levenshtein": "^3.0.0",
 		"inquirer": "^8.0.0",
 		"js-combinatorics": "^2.1.2",
