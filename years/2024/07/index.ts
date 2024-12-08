@@ -5,8 +5,6 @@ import chalk from "chalk";
 import { log, logSolution, trace } from "../../../util/log";
 import { performance } from "perf_hooks";
 import { normalizeTestCases } from "../../../util/test";
-import { ExpressionParser } from "expressionparser";
-import { ExpressionParserOptions, ExpressionThunk } from "expressionparser/dist/ExpressionParser";
 
 const YEAR = 2024;
 const DAY = 7;
@@ -28,20 +26,16 @@ async function p2024day7_part1(input: string, ...params: any[]) {
 		return { result, numbers };
 	});
 	const totalCalibrations = testCases.reduce((acc, testCase) => {
-		//console.log(testCase);
 		return acc + (testOperators(testCase, 1, testCase.numbers[0]) ? testCase.result : 0);
 	}, 0);
 	return totalCalibrations;
 }
 
 function testOperators(testCase: PuzzleTestCase, numberIndex: number, currentResult: number): boolean {
-	//console.log(`Testing ${currentResult} with ${testCase.numbers[numberIndex]} at index ${numberIndex}`);
 	if (currentResult > testCase.result) {
-		//console.log(`Result ${currentResult} is greater than ${testCase.result}`);
 		return false;
 	}
 	if (numberIndex >= testCase.numbers.length) {
-		//console.log(`Last number ${currentResult == testCase.result}`);
 		return (currentResult == testCase.result);
 	}
 
@@ -57,74 +51,25 @@ async function p2024day7_part2(input: string, ...params: any[]) {
 		const numbers = numbersRaw.split(" ").map(n => parseInt(n));
 		return { result, numbers };
 	});
-	const arithmeticLanguage: ExpressionParserOptions = {
-		INFIX_OPS: {
-			'+': function (a: any, b: any) {
-				return a + b;
-			},
-			'*': function (a: any, b: any) {
-				return a * b;
-			},
-			'||': function (a: any, b: any) {
-				return parseInt(a.toString() + b.toString());
-			}
-		},
-		PRECEDENCE: [['||', '+', '*']],
-		GROUP_OPEN: '(',
-		GROUP_CLOSE: ')',
-		SEPARATOR: ' ',
-		SYMBOLS: ['(', ')', '+', '-', '*', '/', ',', '||'],
-		AMBIGUOUS: {},
-		PREFIX_OPS: {},
-		ESCAPE_CHAR: '\\',
-		LITERAL_OPEN: '"',
-		LITERAL_CLOSE: '"',
-
-		termDelegate: function (term: string) {
-			return parseInt(term);
-		}
-	};
-	const expressionParser = new ExpressionParser(arithmeticLanguage);
 	const totalCalibrations = testCases.reduce((acc, testCase) => {
-		return acc + (testOperators2(testCase, 1, testCase.numbers[0].toString(), expressionParser) ? testCase.result : 0);
+		//console.log(testCase);
+		return acc + (testOperators2(testCase, 1, testCase.numbers[0]) ? testCase.result : 0);
 	}, 0);
 	return totalCalibrations;
 }
 
-function testOperators2(testCase: PuzzleTestCase, numberIndex: number, currentResult: string, expressionParser: ExpressionParser): boolean {
+function testOperators2(testCase: PuzzleTestCase, numberIndex: number, currentResult: number): boolean {
+	if (currentResult > testCase.result) {
+		return false;
+	}
 	if (numberIndex >= testCase.numbers.length) {
-		const expression = expressionParser.expressionToRpn(currentResult);
-		return (testCase.result == evaluateReversePolishNotationExpression(expression));
+		return (currentResult == testCase.result);
 	}
 
 	const number = testCase.numbers[numberIndex];
-	return testOperators2(testCase, numberIndex + 1, `${currentResult} + ${number}`, expressionParser) ||
-		testOperators2(testCase, numberIndex + 1, `${currentResult} * ${number}`, expressionParser) ||
-		testOperators2(testCase, numberIndex + 1, `${currentResult} || ${number}`, expressionParser);
-}
-
-function evaluateReversePolishNotationExpression(expression: string[]): number {
-	const stack: number[] = [];
-	for (const token of expression) {
-		if (token === '+' || token === '*' || token === '||') {
-			const b = stack.pop()!;
-			const a = stack.pop()!;
-			switch (token) {
-				case '+':
-					stack.push(a + b);
-					break;
-				case '*':
-					stack.push(a * b);
-					break;
-				case '||':
-					stack.push(parseInt(a.toString() + b.toString()));
-					break;
-			}
-		} else {
-			stack.push(parseInt(token));
-		}
-	}
-	return stack[0];
+	return testOperators2(testCase, numberIndex + 1, currentResult + number) ||
+		testOperators2(testCase, numberIndex + 1, currentResult * number) ||
+		testOperators2(testCase, numberIndex + 1, parseInt(`${currentResult}${number}`));
 }
 
 async function run() {
@@ -219,7 +164,3 @@ run()
 	.catch(error => {
 		throw error;
 	});
-function ExpressionValue(): import("expressionparser/dist/ExpressionParser").ExpressionValue {
-	throw new Error("Function not implemented.");
-}
-
