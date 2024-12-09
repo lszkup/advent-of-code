@@ -14,16 +14,130 @@ const DAY = 9;
 // problem url  : https://adventofcode.com/2024/day/9
 
 async function p2024day9_part1(input: string, ...params: any[]) {
-	return "Not implemented";
+	const fileSystem: number[] = [];
+	const line = input.split("\n")[0];
+	const emptyBlockIndexes: number[] = [];
+	const fileIndexes: number[] = [];
+	let file = true;
+	let fileId = 0;
+	for (let i = 0; i < line.length; i++) {
+		const blockLength = parseInt(line[i]);
+		if (file) {
+			for (let j = 0; j < blockLength; j++) {
+				fileIndexes.push(fileSystem.length);
+				fileSystem.push(fileId);
+			}
+			fileId++;
+		} else {
+			for (let j = 0; j < blockLength; j++) {
+				emptyBlockIndexes.push(fileSystem.length);
+				fileSystem.push(-1);
+			}
+		}
+		file = !file;
+	}
+	// console.log('BEFORE', fileSystem);
+	// console.log('emptyBlockIndexes', emptyBlockIndexes);
+	// console.log('fileIndexes', fileIndexes);
+	let currentEmptyBlockIndex = 0;
+	for (let i = fileIndexes.length - 1; i >= 0 && currentEmptyBlockIndex < emptyBlockIndexes.length; i--, currentEmptyBlockIndex++) {
+		const freeSpaceIndex = emptyBlockIndexes[currentEmptyBlockIndex];
+		const fileIndex = fileIndexes[i];
+		if (fileIndex > freeSpaceIndex) {
+			fileSystem[freeSpaceIndex] = fileSystem[fileIndex];
+			fileSystem[fileIndex] = -1;
+		} else { break; }
+	}
+	//console.log('AFTER', fileSystem);
+	const checkSum = fileSystem.reduce((acc, val, index) => {
+		if (val >= 0) {
+			acc += index * fileSystem[index];
+		}
+		return acc;
+	}, 0);
+	return checkSum;
+}
+
+interface FileRange {
+	startIndex: number;
+	length: number;
 }
 
 async function p2024day9_part2(input: string, ...params: any[]) {
-	return "Not implemented";
+	const fileSystem: number[] = [];
+	const line = input.split("\n")[0];
+	const emptyBlockIndexes: number[] = [];
+	const fileIndexes: number[] = [];
+	const fileRanges: FileRange[] = []
+	let file = true;
+	let fileId = 0;
+	for (let i = 0; i < line.length; i++) {
+		const blockLength = parseInt(line[i]);
+		if (file) {
+			if (blockLength > 0) {
+				fileRanges.push({ startIndex: fileSystem.length, length: blockLength });
+			}
+			for (let j = 0; j < blockLength; j++) {
+				fileIndexes.push(fileSystem.length);
+				fileSystem.push(fileId);
+			}
+			fileId++;
+		} else {
+			for (let j = 0; j < blockLength; j++) {
+				emptyBlockIndexes.push(fileSystem.length);
+				fileSystem.push(-1);
+			}
+		}
+		file = !file;
+	}
+	//console.log('BEFORE', fileSystem);
+	//console.log('FILE_RANGES', fileRanges);
+	for (let i = fileRanges.length - 1; i >= 0; i--) {
+		const fileRange = fileRanges[i];
+		let lengthOfContinousBlock = 0;
+		let continousBlockStartindex = -1;
+		for (let j = 0; j < fileSystem.length - fileRange.length; j++) {
+			if (fileSystem[j] === -1) {
+				if (continousBlockStartindex === -1) {
+					continousBlockStartindex = j;
+				}
+				lengthOfContinousBlock++;
+			} else {
+				lengthOfContinousBlock = 0;
+				continousBlockStartindex = -1;
+			}
+			if (lengthOfContinousBlock === fileRange.length) {
+				if (continousBlockStartindex < fileRange.startIndex) {
+					for (let k = 0; k < fileRange.length; k++) {
+						fileSystem[continousBlockStartindex + k] = fileSystem[fileRange.startIndex + k];
+						fileSystem[fileRange.startIndex + k] = -1;
+					}
+				}
+				break;
+			}
+		}
+	}
+	//console.log('AFTER', fileSystem);
+	const checkSum = fileSystem.reduce((acc, val, index) => {
+		if (val >= 0) {
+			acc += index * fileSystem[index];
+		}
+		return acc;
+	}, 0);
+	return checkSum;
 }
 
 async function run() {
-	const part1tests: TestCase[] = [];
-	const part2tests: TestCase[] = [];
+	const part1tests: TestCase[] = [{
+		input: "2333133121414131402",
+		expected: "1928",
+		extraArgs: []
+	}];
+	const part2tests: TestCase[] = [{
+		input: "2333133121414131402",
+		expected: "2858",
+		extraArgs: []
+	}];
 
 	const [p1testsNormalized, p2testsNormalized] = normalizeTestCases(part1tests, part2tests);
 
