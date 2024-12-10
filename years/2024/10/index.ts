@@ -19,7 +19,7 @@ interface Point {
 }
 
 interface Cell {
-	uniqueNines: String[];
+	uniqueNines: Set<String>;
 	numberOfIncomingNines: number;
 }
 
@@ -37,8 +37,8 @@ async function p2024day10_part1(input: string, ...params: any[]) {
 	let cells = lines.map((line, row) => {
 		let x = line.map<Cell>((char, column) => {
 			let cell = char === "9" ?
-				{ uniqueNines: [pointToString({ row, column })], numberOfIncomingNines: 1 } :
-				{ uniqueNines: [], numberOfIncomingNines: 0 }
+				{ uniqueNines: new Set<String>([pointToString({ row, column })]), numberOfIncomingNines: 1 } :
+				{ uniqueNines: new Set<String>(), numberOfIncomingNines: 0 }
 			return cell;
 		});
 		return x;
@@ -57,7 +57,7 @@ async function p2024day10_part1(input: string, ...params: any[]) {
 				if (topCellHeight == height - 1) {
 					newStartingPoints.push({ row: point.row - 1, column: point.column });
 					currentUniqueNines.forEach(uniqueNine => {
-						addIfNew(cells[point.row - 1][point.column].uniqueNines, (uniqueNine));
+						cells[point.row - 1][point.column].uniqueNines.add(uniqueNine);
 					});
 				}
 			}
@@ -66,7 +66,7 @@ async function p2024day10_part1(input: string, ...params: any[]) {
 				if (bottomCellHeight == height - 1) {
 					newStartingPoints.push({ row: point.row + 1, column: point.column });
 					currentUniqueNines.forEach(uniqueNine => {
-						addIfNew(cells[point.row + 1][point.column].uniqueNines, (uniqueNine));
+						cells[point.row + 1][point.column].uniqueNines.add(uniqueNine);
 					});
 				}
 			}
@@ -75,7 +75,7 @@ async function p2024day10_part1(input: string, ...params: any[]) {
 				if (leftCellHeight == height - 1) {
 					newStartingPoints.push({ row: point.row, column: point.column - 1 });
 					currentUniqueNines.forEach(uniqueNine => {
-						addIfNew(cells[point.row][point.column - 1].uniqueNines, (uniqueNine));
+						cells[point.row][point.column - 1].uniqueNines.add(uniqueNine);
 					});
 				}
 			}
@@ -84,7 +84,7 @@ async function p2024day10_part1(input: string, ...params: any[]) {
 				if (rightCellHeight == height - 1) {
 					newStartingPoints.push({ row: point.row, column: point.column + 1 });
 					currentUniqueNines.forEach(uniqueNine => {
-						addIfNew(cells[point.row][point.column + 1].uniqueNines, (uniqueNine));
+						cells[point.row][point.column + 1].uniqueNines.add(uniqueNine);
 					});
 				}
 			}
@@ -94,7 +94,7 @@ async function p2024day10_part1(input: string, ...params: any[]) {
 	let numberOfTrials = lines.reduce((acc, line, row) => {
 		return acc + line.reduce((acc, char, column) => {
 			if (char === "0") {
-				return acc + cells[row][column].uniqueNines.length;
+				return acc + cells[row][column].uniqueNines.size;
 			}
 			return acc;
 		}, 0);
@@ -112,8 +112,8 @@ async function p2024day10_part2(input: string, ...params: any[]) {
 	let cells = lines.map((line, row) => {
 		let x = line.map<Cell>((char, column) => {
 			let cell = char === "9" ?
-				{ uniqueNines: [pointToString({ row, column })], numberOfIncomingNines: 1 } :
-				{ uniqueNines: [], numberOfIncomingNines: 0 }
+				{ uniqueNines: new Set([pointToString({ row, column })]), numberOfIncomingNines: 1 } :
+				{ uniqueNines: new Set<String>(), numberOfIncomingNines: 0 }
 			return cell;
 		});
 		return x;
@@ -133,7 +133,7 @@ async function p2024day10_part2(input: string, ...params: any[]) {
 					newStartingPoints.push({ row: point.row - 1, column: point.column });
 					cells[point.row - 1][point.column].numberOfIncomingNines++;
 					currentUniqueNines.forEach(uniqueNine => {
-						addIfNew(cells[point.row - 1][point.column].uniqueNines, (uniqueNine));
+						cells[point.row - 1][point.column].uniqueNines.add(uniqueNine);
 					});
 				}
 			}
@@ -143,7 +143,7 @@ async function p2024day10_part2(input: string, ...params: any[]) {
 					newStartingPoints.push({ row: point.row + 1, column: point.column });
 					cells[point.row + 1][point.column].numberOfIncomingNines++;
 					currentUniqueNines.forEach(uniqueNine => {
-						addIfNew(cells[point.row + 1][point.column].uniqueNines, (uniqueNine));
+						cells[point.row + 1][point.column].uniqueNines.add(uniqueNine);
 					});
 				}
 			}
@@ -153,7 +153,7 @@ async function p2024day10_part2(input: string, ...params: any[]) {
 					newStartingPoints.push({ row: point.row, column: point.column - 1 });
 					cells[point.row][point.column - 1].numberOfIncomingNines++;
 					currentUniqueNines.forEach(uniqueNine => {
-						addIfNew(cells[point.row][point.column - 1].uniqueNines, (uniqueNine));
+						cells[point.row][point.column - 1].uniqueNines.add(uniqueNine);
 					});
 				}
 			}
@@ -163,7 +163,7 @@ async function p2024day10_part2(input: string, ...params: any[]) {
 					newStartingPoints.push({ row: point.row, column: point.column + 1 });
 					cells[point.row][point.column + 1].numberOfIncomingNines++;
 					currentUniqueNines.forEach(uniqueNine => {
-						addIfNew(cells[point.row][point.column + 1].uniqueNines, (uniqueNine));
+						cells[point.row][point.column + 1].uniqueNines.add(uniqueNine);
 					});
 				}
 			}
@@ -255,9 +255,3 @@ run()
 	.catch(error => {
 		throw error;
 	});
-
-function addIfNew(uniqueNines: String[], arg1: String) {
-	if (!uniqueNines.includes(arg1)) {
-		uniqueNines.push(arg1);
-	}
-}
