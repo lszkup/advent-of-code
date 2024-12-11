@@ -1,4 +1,4 @@
-import _ from "lodash";
+import _, { forEach } from "lodash";
 import * as util from "../../../util/util";
 import * as test from "../../../util/test";
 import chalk from "chalk";
@@ -14,16 +14,69 @@ const DAY = 11;
 // problem url  : https://adventofcode.com/2024/day/11
 
 async function p2024day11_part1(input: string, ...params: any[]) {
-	return "Not implemented";
+	let stones: number[] = input.split(" ").map(x => parseInt(x));
+	const numberOfStones = stones.reduce((acc, stone) => {
+		const stoneNunber = analyzyeStone(stone, 0);
+		return acc + stoneNunber;
+	}, 0);
+	return numberOfStones;
+}
+
+function analyzyeStone(stone: number, iteration: number): number {
+	if (iteration >= 25) return 1;
+	if (stone == 0) {
+		return analyzyeStone(1, iteration + 1);
+	} else if (stone.toString().length % 2 == 0) {
+		const stone1 = parseInt(stone.toString().substring(0, stone.toString().length / 2));
+		const stone2 = parseInt(stone.toString().substring(stone.toString().length / 2))
+		return analyzyeStone(stone1, iteration + 1) + analyzyeStone(stone2, iteration + 1);
+	} else {
+		return analyzyeStone(stone * 2024, iteration + 1);
+	}
 }
 
 async function p2024day11_part2(input: string, ...params: any[]) {
-	return "Not implemented";
+	const cachedResults: Map<string, number> = new Map();
+	let stones: number[] = input.split(" ").map(x => parseInt(x));
+	const numberOfStones = stones.reduce((acc, stone) => {
+		const stoneNunber = analyzyeStone2(stone, 0, cachedResults);
+		return acc + stoneNunber;
+	}, 0);
+	return numberOfStones;
+}
+
+function analyzyeStone2(stone: number, iteration: number, cachedResults: Map<string, number>): number {
+	if (iteration >= 75) return 1;
+	const cacheKey = `${stone},${iteration}`;
+	if (cachedResults.has(cacheKey)) {
+		return cachedResults.get(cacheKey)!;
+	}
+	if (stone == 0) {
+		const result = analyzyeStone2(1, iteration + 1, cachedResults);
+		cachedResults.set(cacheKey, result);
+		return result;
+	} else if (stone.toString().length % 2 == 0) {
+		const stone1 = parseInt(stone.toString().substring(0, stone.toString().length / 2));
+		const stone2 = parseInt(stone.toString().substring(stone.toString().length / 2))
+		const result = analyzyeStone2(stone1, iteration + 1, cachedResults) + analyzyeStone2(stone2, iteration + 1, cachedResults);
+		cachedResults.set(cacheKey, result);
+		return result;
+	} else {
+		const result = analyzyeStone2(stone * 2024, iteration + 1, cachedResults);
+		cachedResults.set(cacheKey, result);
+		return result;
+	}
 }
 
 async function run() {
-	const part1tests: TestCase[] = [];
-	const part2tests: TestCase[] = [];
+	const part1tests: TestCase[] = [{
+		input: `125 17`, expected: `55312`
+	}, {
+		input: `3 386358 86195 85 1267 3752457 0 741`, expected: `183248`
+	}];
+	const part2tests: TestCase[] = [{
+		input: `125 17`, expected: `65601038650482`
+	}];
 
 	const [p1testsNormalized, p2testsNormalized] = normalizeTestCases(part1tests, part2tests);
 
