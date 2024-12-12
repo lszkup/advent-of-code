@@ -96,12 +96,6 @@ So, it has a total price of 1930.
 What is the total price of fencing all regions on your map?
 */
 
-interface Cell {
-	row: number;
-	column: number;
-	fences?: CellFences;
-}
-
 async function p2024day12_part1(input: string, ...params: any[]) {
 	const lines = input.split("\n").map(line => [...line.trim()]);
 	const visitedGlobal = input.split("\n").map(line => [...line.trim()].map(() => false));
@@ -113,11 +107,9 @@ async function p2024day12_part1(input: string, ...params: any[]) {
 			}
 			const visitedLocal = input.split("\n").map(line => [...line.trim()].map(() => false));
 			const letter = lines[rowIndex][columnIndex];
-			//console.log('letter', letter);
 			visitedLocal[rowIndex][columnIndex] = true;
 			let cellsToVisit = [{ row: rowIndex, column: columnIndex }];
 			while (cellsToVisit.length) {
-				//console.log('cellsToVisit', cellsToVisit.length);
 				let cellsToVisitNext: Cell[] = [];
 				cellsToVisit.forEach(cell => {
 					const neighbors: Cell[] = [
@@ -138,7 +130,6 @@ async function p2024day12_part1(input: string, ...params: any[]) {
 				});
 				cellsToVisit = cellsToVisitNext;
 			}
-			//console.log('visitedLocal', visitedLocal);
 			// Udpate the region cost
 			let numberOfFences = 0;
 			let fieldSize = 0;
@@ -146,7 +137,6 @@ async function p2024day12_part1(input: string, ...params: any[]) {
 				for (let j = 0; j < visitedLocal[i].length; j++) {
 					if (visitedLocal[i][j]) {
 						fieldSize++;
-						//console.log('row', i, 'column', j, 'letter', lines[i][j]);
 						const neighbors: Cell[] = [
 							{ row: i - 1, column: j },
 							{ row: i + 1, column: j },
@@ -156,34 +146,25 @@ async function p2024day12_part1(input: string, ...params: any[]) {
 						for (const neighbor of neighbors) {
 							if (neighbor.row < 0) {
 								numberOfFences++;
-								//console.log('neighbor1', neighbor);
 							}
 							if (neighbor.row >= lines.length) {
 								numberOfFences++;
-								//console.log('neighbor2', neighbor);
 							}
 							if (neighbor.column < 0) {
 								numberOfFences++;
-								//console.log('neighbor3', neighbor);
 							}
 							if (neighbor.column >= lines[0].length) {
 								numberOfFences++;
-								//console.log('neighbor4', neighbor);
 							}
 							if (neighbor.row >= 0 && neighbor.row < lines.length && neighbor.column >= 0 && neighbor.column < lines[0].length) {
 								if (!visitedLocal[neighbor.row][neighbor.column]) {
 									numberOfFences++;
-									//console.log('neighbor5', neighbor);
 								}
 							}
 						}
 					}
 				}
 			}
-
-			// console.log('fieldSize', fieldSize);
-			// console.log('numberOfFences', numberOfFences);
-			// console.log('regionCostCounter', regionCostCounter);
 			// Update the global visited array
 			for (let i = 0; i < visitedLocal.length; i++) {
 				for (let j = 0; j < visitedLocal[i].length; j++) {
@@ -198,11 +179,15 @@ async function p2024day12_part1(input: string, ...params: any[]) {
 	return regionCostCounter;
 }
 
+interface Cell {
+	row: number;
+	column: number;
+}
+
 interface CellFences {
-	left: boolean;
-	right: boolean;
-	top: boolean;
-	bottom: boolean;
+	row: number;
+	column: number;
+	fencePosition: 'top' | 'bottom' | 'left' | 'right';
 }
 
 async function p2024day12_part2(input: string, ...params: any[]) {
@@ -218,11 +203,9 @@ async function p2024day12_part2(input: string, ...params: any[]) {
 			regionCounter++;
 			const visitedLocal: Map<string, boolean> = new Map();
 			const letter = lines[rowIndex][columnIndex];
-			//console.log('letter', letter);
 			visitedLocal.set(`${rowIndex},${columnIndex}`, true);
 			let cellsToVisit = [{ row: rowIndex, column: columnIndex }];
 			while (cellsToVisit.length) {
-				//console.log('cellsToVisit', cellsToVisit.length);
 				let cellsToVisitNext: Cell[] = [];
 				cellsToVisit.forEach(cell => {
 					const neighbors: Cell[] = [
@@ -236,7 +219,6 @@ async function p2024day12_part2(input: string, ...params: any[]) {
 							if (lines[neighbor.row][neighbor.column] === letter && !visitedLocal.has(`${neighbor.row},${neighbor.column}`)) {
 								cellsToVisitNext.push(neighbor);
 								visitedLocal.set(`${neighbor.row},${neighbor.column}`, true);
-								//console.log('neighbor', neighbor);
 							}
 						}
 					}
@@ -245,76 +227,69 @@ async function p2024day12_part2(input: string, ...params: any[]) {
 			}
 			// Udpate the region cost
 			let fieldSize = 0;
-			const fencing: CellFences[][] = input.split("\n").map(line => [...line.trim()].map(() => ({ left: false, right: false, top: false, bottom: false })));
+			const fencing: CellFences[] = [];
 			visitedLocal.forEach((value, key) => {
 				const [i, j] = key.split(',').map(Number);
 				fieldSize++;
-				const neighbors: Cell[] = [
-					{ row: i - 1, column: j, fences: { left: false, right: false, top: true, bottom: false } },
-					{ row: i + 1, column: j, fences: { left: false, right: false, top: false, bottom: true } },
-					{ row: i, column: j - 1, fences: { left: true, right: false, top: false, bottom: false } },
-					{ row: i, column: j + 1, fences: { left: false, right: true, top: false, bottom: false } }
+				const neighbors: CellFences[] = [
+					{ row: i - 1, column: j, fencePosition: 'top' },
+					{ row: i + 1, column: j, fencePosition: 'bottom' },
+					{ row: i, column: j - 1, fencePosition: 'left' },
+					{ row: i, column: j + 1, fencePosition: 'right' }
 				];
 				for (const neighbor of neighbors) {
 					if (neighbor.row < 0) {
-						fencing[i][j].top = true;
+						fencing.push({ row: i, column: j, fencePosition: 'top' });
 					}
 					if (neighbor.row >= lines.length) {
-						fencing[i][j].bottom = true;
+						fencing.push({ row: i, column: j, fencePosition: 'bottom' });
 					}
 					if (neighbor.column < 0) {
-						fencing[i][j].left = true;
-
+						fencing.push({ row: i, column: j, fencePosition: 'left' });
 					}
 					if (neighbor.column >= lines[0].length) {
-						fencing[i][j].right = true;
+						fencing.push({ row: i, column: j, fencePosition: 'right' });
 					}
 					if (neighbor.row >= 0 && neighbor.row < lines.length && neighbor.column >= 0 && neighbor.column < lines[0].length) {
 						if (!visitedLocal.has(`${neighbor.row},${neighbor.column}`)) {
-							fencing[i][j].top = fencing[i][j].top || neighbor.fences!.top;
-							fencing[i][j].bottom = fencing[i][j].bottom || neighbor.fences!.bottom;
-							fencing[i][j].left = fencing[i][j].left || neighbor.fences!.left;
-							fencing[i][j].right = fencing[i][j].right || neighbor.fences!.right;
+							fencing.push({ row: i, column: j, fencePosition: neighbor.fencePosition });
 						}
 					}
 				}
 			});
 
 			let numberOfStraightFences = 0;
-			for (let i = 0; i < fencing.length; i++) {
-				let didPreviousCellHaveTopFence = false;
-				let didPreviousCellHaveBottomFence = false;
-				for (let j = 0; j < fencing[i].length; j++) {
-					if (fencing[i][j].top && !didPreviousCellHaveTopFence) {
-						numberOfStraightFences++;
+			const fenceRowsAndColumns = new Map<string, number[]>();
+			fencing.forEach(fence => {
+				if (fence.fencePosition === 'top' || fence.fencePosition === 'bottom') {
+					const key = `${fence.fencePosition}${fence.row}`;
+					if (!fenceRowsAndColumns.has(key)) {
+						fenceRowsAndColumns.set(key, []);
 					}
-					didPreviousCellHaveTopFence = fencing[i][j].top;
-
-					if (fencing[i][j].bottom && !didPreviousCellHaveBottomFence) {
-						numberOfStraightFences++;
+					fenceRowsAndColumns.get(key)!.push(fence.column);
+				} else {
+					const key = `${fence.fencePosition}${fence.column}`;
+					if (!fenceRowsAndColumns.has(key)) {
+						fenceRowsAndColumns.set(key, []);
 					}
-					didPreviousCellHaveBottomFence = fencing[i][j].bottom;
+					fenceRowsAndColumns.get(key)!.push(fence.row);
 				}
-			}
-			for (let j = 0; j < fencing[0].length; j++) {
-				let didPreviousCellHaveLeftFence = false;
-				let didPreviousCellHaveRightFence = false;
-				for (let i = 0; i < fencing.length; i++) {
-					if (fencing[i][j].left && !didPreviousCellHaveLeftFence) {
-						numberOfStraightFences++;
-					}
-					didPreviousCellHaveLeftFence = fencing[i][j].left;
+			});
 
-					if (fencing[i][j].right && !didPreviousCellHaveRightFence) {
-						numberOfStraightFences++;
+			fenceRowsAndColumns.forEach((columnsOrRows, key) => {
+				const sorted = columnsOrRows.sort();
+				if (sorted.length === 1) {
+					numberOfStraightFences++;
+				} if (sorted.length > 1) {
+					numberOfStraightFences++;
+					for (let i = 1; i < sorted.length; i++) {
+						if (sorted[i] - sorted[i - 1] > 1) {
+							numberOfStraightFences++;
+						}
 					}
-					didPreviousCellHaveRightFence = fencing[i][j].right;
 				}
-			}
+			});
 
-			// console.log('fieldSize', fieldSize);
-			// console.log('numberOfStraightFences', numberOfStraightFences);
-			// console.log('regionCostCounter', regionCostCounter);
 			// Update the global visited array
 			visitedLocal.forEach((value, key) => {
 				const [i, j] = key.split(',').map(Number);
@@ -323,7 +298,6 @@ async function p2024day12_part2(input: string, ...params: any[]) {
 			regionCostCounter += fieldSize * numberOfStraightFences;
 		}
 	}
-	console.log('regionCounter', regionCounter);
 	return regionCostCounter;
 }
 
@@ -376,6 +350,15 @@ async function run() {
 				ABBAAA
 				AAAAAA`,
 		expected: `368`
+	}, {
+		input: `ABABABABABAB
+				BABABABABABA
+				ABABABABABAB
+				BABABABABABA
+				ABABABABABAB
+				BABABABABABA
+				ABABABABABAB`,
+		expected: `336`
 	}];
 
 	const [p1testsNormalized, p2testsNormalized] = normalizeTestCases(part1tests, part2tests);
