@@ -98,7 +98,7 @@ What is the total price of fencing all regions on your map?
 
 async function p2024day12_part1(input: string, ...params: any[]) {
 	const lines = input.split("\n").map(line => [...line.trim()]);
-	const visitedGlobal = input.split("\n").map(line => [...line.trim()].map(() => false));
+	const visitedGlobal = lines.map(line => line.map(() => false));
 	let regionCostCounter = 0;
 	for (let rowIndex = 0; rowIndex < lines.length; rowIndex++) {
 		for (let columnIndex = 0; columnIndex < lines[rowIndex].length; columnIndex++) {
@@ -192,7 +192,7 @@ interface CellFences {
 
 async function p2024day12_part2(input: string, ...params: any[]) {
 	const lines = input.split("\n").map(line => [...line.trim()]);
-	const visitedGlobal = input.split("\n").map(line => [...line.trim()].map(() => false));
+	const visitedGlobal = lines.map(line => line.map(() => false));
 	let regionCostCounter = 0;
 	for (let rowIndex = 0; rowIndex < lines.length; rowIndex++) {
 		for (let columnIndex = 0; columnIndex < lines[rowIndex].length; columnIndex++) {
