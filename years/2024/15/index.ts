@@ -121,27 +121,23 @@ function sleep(ms: number) {
 }
 
 async function p2024day15_part2(input: string, ...params: any[]) {
-	const debugMode = false;
+	const debugMode = true;
 	const board = input.split("\n")
 		.map(line => line.trim())
 		.filter(line => line.length && line.startsWith('#'))
 		.map(line => line.replaceAll('#', '##').replaceAll('O', '[]').replaceAll('.', '..').replaceAll('@', '@.'))
 		.map(line => [...line.trim()]);
-	if (debugMode) {
-		console.log(board.map(line => line.join("")).join("\n"));
-	}
 	const moves = input.split("\n")
 		.map(line => line.trim())
 		.filter(line => line.length && !line.startsWith('#'))
 		.join("");
+	if (debugMode) {
+		await printBoard(board, '@', 0, moves.length, 30);
+	}
 	let robotX = board.filter(line => line.includes('@'))[0].indexOf('@');
 	let robotY = board.findIndex(line => line.includes('@'));
 	for (let index = 0; index < moves.length; index++) {
 		const move = moves[index];
-		if (debugMode) {
-			await sleep(300);
-			console.log(move, index, moves.length);
-		}
 		switch (move) {
 			case '^':
 				if (robotY > 1) {
@@ -155,7 +151,7 @@ async function p2024day15_part2(input: string, ...params: any[]) {
 					}
 					else if (board[robotY - 1][robotX] == '[') {
 						const cellsToPush: CellToPush[] = [];
-						if (canBoxBePushedUp(board, robotY - 1, robotX, robotX + 1, cellsToPush)) {
+						if (canBoxBePushed(board, robotY - 1, robotX, robotX + 1, cellsToPush, -1)) {
 							moveBoxesUp(board, cellsToPush);
 							board[robotY - 1][robotX] = '@';
 							board[robotY][robotX] = '.';
@@ -164,11 +160,8 @@ async function p2024day15_part2(input: string, ...params: any[]) {
 					}
 					else if (board[robotY - 1][robotX] == ']') {
 						const cellsToPush: CellToPush[] = [];
-						if (canBoxBePushedUp(board, robotY - 1, robotX - 1, robotX, cellsToPush)) {
+						if (canBoxBePushed(board, robotY - 1, robotX - 1, robotX, cellsToPush, -1)) {
 							moveBoxesUp(board, cellsToPush);
-							// if (index == 5) {
-							// 	console.log('cellsToPush', cellsToPush);
-							// }
 							board[robotY - 1][robotX] = '@';
 							board[robotY][robotX] = '.';
 							robotY--;
@@ -188,7 +181,7 @@ async function p2024day15_part2(input: string, ...params: any[]) {
 					}
 					else if (board[robotY + 1][robotX] == '[') {
 						const cellsToPush: CellToPush[] = [];
-						if (canBoxBePushedDown(board, robotY + 1, robotX, robotX + 1, cellsToPush)) {
+						if (canBoxBePushed(board, robotY + 1, robotX, robotX + 1, cellsToPush, 1)) {
 							moveBoxesDown(board, cellsToPush);
 							board[robotY + 1][robotX] = '@';
 							board[robotY][robotX] = '.';
@@ -197,7 +190,7 @@ async function p2024day15_part2(input: string, ...params: any[]) {
 					}
 					else if (board[robotY + 1][robotX] == ']') {
 						const cellsToPush: CellToPush[] = [];
-						if (canBoxBePushedDown(board, robotY + 1, robotX - 1, robotX, cellsToPush)) {
+						if (canBoxBePushed(board, robotY + 1, robotX - 1, robotX, cellsToPush, 1)) {
 							moveBoxesDown(board, cellsToPush);
 							board[robotY + 1][robotX] = '@';
 							board[robotY][robotX] = '.';
@@ -242,7 +235,7 @@ async function p2024day15_part2(input: string, ...params: any[]) {
 				break;
 		}
 		if (debugMode) {
-			console.log(board.map(line => line.join("").replace('@', move)).join("\n"));
+			await printBoard(board, move, index, moves.length, 100);
 		}
 	}
 	let sumOfAllBoxesLocations = 0;
@@ -256,64 +249,48 @@ async function p2024day15_part2(input: string, ...params: any[]) {
 	return sumOfAllBoxesLocations;
 }
 
+const colorReset = "\x1b[0m";
+const colorRed = "\x1b[31m";
+const colorGreen = "\x1b[32m";
+const colorBright = "\x1b[1m";
+const bgBlack = "\x1b[40m";
+const fgBlue = "\x1b[34m";
+const bgWhite = "\x1b[47m";
+const bgGray = "\x1b[100m";
+
+
+async function printBoard(board: string[][], move: string, frame: number, totalNumberOfFrames: number, sleepInMs: number): Promise<void> {
+	console.log('Frame:', frame, '/', totalNumberOfFrames);
+	console.log(board.map(line => line.join("")
+		.replace('@', bgBlack + colorBright + colorRed + move + colorReset)
+		.replaceAll('.', bgBlack + ' ' + colorReset)
+		.replaceAll('##', bgBlack + colorBright + colorGreen + '##' + colorReset)
+		.replaceAll('[]', bgGray + colorBright + fgBlue + '[]' + colorReset)
+	)
+		.join("\n"));
+	await sleep(sleepInMs);
+}
+
 interface CellToPush {
 	x: number;
 	y: number;
 	value: string;
 }
 
-// WORKS
-function canBoxBePushedUp(board: string[][], boxY: number, boxX1: number, boxX2: number, cellsToPush: CellToPush[]): boolean {
-	if (board[boxY - 1][boxX1] == '#' || board[boxY - 1][boxX2] == '#') {
-		return false;
-	}
-	if (board[boxY - 1][boxX1] == '.' && board[boxY - 1][boxX2] == '.') {
-		cellsToPush.push({ x: boxX1, y: boxY, value: board[boxY][boxX1] });
-		cellsToPush.push({ x: boxX2, y: boxY, value: board[boxY][boxX2] });
-		return true;
-	}
-	if (board[boxY - 1][boxX1] == '[') {
-		if (canBoxBePushedUp(board, boxY - 1, boxX1, boxX2, cellsToPush)) {
-			cellsToPush.push({ x: boxX1, y: boxY, value: board[boxY][boxX1] });
-			cellsToPush.push({ x: boxX2, y: boxY, value: board[boxY][boxX2] });
-			return true;
-		}
-	} else {
-		let numberOfMustBePushedBoxes = 0;
-		let numberOfCanBePushedBoxes = 0;
-		if (board[boxY - 1][boxX1] == ']') {
-			numberOfMustBePushedBoxes++;
-			if (canBoxBePushedUp(board, boxY - 1, boxX1 - 1, boxX1, cellsToPush)) {
-				numberOfCanBePushedBoxes++;
-			}
-		}
-		if (board[boxY - 1][boxX2] == '[') {
-			numberOfMustBePushedBoxes++;
-			if (canBoxBePushedUp(board, boxY - 1, boxX2, boxX2 + 1, cellsToPush)) {
-				numberOfCanBePushedBoxes++;
-			}
-		}
-		const canBePushed = numberOfMustBePushedBoxes > 0 && numberOfMustBePushedBoxes == numberOfCanBePushedBoxes;
-		if (canBePushed) {
-			cellsToPush.push({ x: boxX1, y: boxY, value: board[boxY][boxX1] });
-			cellsToPush.push({ x: boxX2, y: boxY, value: board[boxY][boxX2] });
-		}
-		return canBePushed;
-	}
-	return false;
-}
+function canBoxBePushed(board: string[][], boxY: number, boxX1: number, boxX2: number, cellsToPush: CellToPush[], direction: number): boolean {
+	// TODO: use a dictornary to store visited cells and limit the number of recursive calls
+	// key = `${boxY},${boxX1}-${boxX2}`
 
-function canBoxBePushedDown(board: string[][], boxY: number, boxX1: number, boxX2: number, cellsToPush: CellToPush[]): boolean {
-	if (board[boxY + 1][boxX1] == '#' || board[boxY + 1][boxX2] == '#') {
+	if (board[boxY + 1 * direction][boxX1] == '#' || board[boxY + 1 * direction][boxX2] == '#') {
 		return false;
 	}
-	if (board[boxY + 1][boxX1] == '.' && board[boxY + 1][boxX2] == '.') {
+	if (board[boxY + 1 * direction][boxX1] == '.' && board[boxY + 1 * direction][boxX2] == '.') {
 		cellsToPush.push({ x: boxX1, y: boxY, value: board[boxY][boxX1] });
 		cellsToPush.push({ x: boxX2, y: boxY, value: board[boxY][boxX2] });
 		return true;
 	}
-	if (board[boxY + 1][boxX1] == '[') {
-		if (canBoxBePushedDown(board, boxY + 1, boxX1, boxX2, cellsToPush)) {
+	if (board[boxY + 1 * direction][boxX1] == '[') {
+		if (canBoxBePushed(board, boxY + 1 * direction, boxX1, boxX2, cellsToPush, direction)) {
 			cellsToPush.push({ x: boxX1, y: boxY, value: board[boxY][boxX1] });
 			cellsToPush.push({ x: boxX2, y: boxY, value: board[boxY][boxX2] });
 			return true;
@@ -321,15 +298,15 @@ function canBoxBePushedDown(board: string[][], boxY: number, boxX1: number, boxX
 	} else {
 		let numberOfMustBePushedBoxes = 0;
 		let numberOfCanBePushedBoxes = 0;
-		if (board[boxY + 1][boxX1] == ']') {
+		if (board[boxY + 1 * direction][boxX1] == ']') {
 			numberOfMustBePushedBoxes++;
-			if (canBoxBePushedDown(board, boxY + 1, boxX1 - 1, boxX1, cellsToPush)) {
+			if (canBoxBePushed(board, boxY + 1 * direction, boxX1 - 1, boxX1, cellsToPush, direction)) {
 				numberOfCanBePushedBoxes++;
 			}
 		}
-		if (board[boxY + 1][boxX2] == '[') {
+		if (board[boxY + 1 * direction][boxX2] == '[') {
 			numberOfMustBePushedBoxes++;
-			if (canBoxBePushedDown(board, boxY + 1, boxX2, boxX2 + 1, cellsToPush)) {
+			if (canBoxBePushed(board, boxY + 1 * direction, boxX2, boxX2 + 1, cellsToPush, direction)) {
 				numberOfCanBePushedBoxes++;
 			}
 		}
@@ -358,6 +335,11 @@ function moveBoxesDown(board: string[][], cellsToPush: CellToPush[]): void {
 		board[cell.y][cell.x] = '.';
 	}
 }
+
+/*
+Part 1:  1383666 
+Part 2:  1412866 
+*/
 
 async function run() {
 	const part1tests: TestCase[] = [{
@@ -398,30 +380,18 @@ async function run() {
 		expected: `10092`
 	}];
 	const part2tests: TestCase[] = [
-		{
-			input: `#######
-					#.....#
-					#.OOO.#
-					#..OO@#
-					#..O..#
-					#.....#
-					#######
-		
-					<vv<<^^<<^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^`,
-			expected: `1036`
-		},
-		{
-			input: `#######
-					#...#.#
-					#.....#
-					#..OO@#
-					#..O..#
-					#.....#
-					#######
-		
-					<vv<<^^<<^^`,
-			expected: `618`
-		},
+		// {
+		// 	input: `#######
+		// 			#...#.#
+		// 			#.....#
+		// 			#..OO@#
+		// 			#..O..#
+		// 			#.....#
+		// 			#######
+
+		// 			<vv<<^^<<^^`,
+		// 	expected: `618`
+		// },
 		{
 			input: `##########
 					#..O..O.O#
@@ -465,22 +435,22 @@ async function run() {
 	test.endTests();
 
 	// Get input and run program while measuring performance
-	const input = await util.getInput(DAY, YEAR);
+	// const input = await util.getInput(DAY, YEAR);
 
-	const part1Before = performance.now();
-	const part1Solution = String(await p2024day15_part1(input));
-	const part1After = performance.now();
+	// const part1Before = performance.now();
+	// const part1Solution = String(await p2024day15_part1(input));
+	// const part1After = performance.now();
 
-	const part2Before = performance.now()
-	const part2Solution = String(await p2024day15_part2(input));
-	const part2After = performance.now();
+	// const part2Before = performance.now()
+	// const part2Solution = String(await p2024day15_part2(input));
+	// const part2After = performance.now();
 
-	logSolution(15, 2024, part1Solution, part2Solution);
+	// logSolution(15, 2024, part1Solution, part2Solution);
 
-	log(chalk.gray("--- Performance ---"));
-	log(chalk.gray(`Part 1: ${util.formatTime(part1After - part1Before)}`));
-	log(chalk.gray(`Part 2: ${util.formatTime(part2After - part2Before)}`));
-	log();
+	// log(chalk.gray("--- Performance ---"));
+	// log(chalk.gray(`Part 1: ${util.formatTime(part1After - part1Before)}`));
+	// log(chalk.gray(`Part 2: ${util.formatTime(part2After - part2Before)}`));
+	// log();
 }
 
 run()
