@@ -18,31 +18,39 @@ interface Cell {
 	row: number;
 	cost?: number;
 }
+
+type Direction = 0 | 90 | 180 | 270;
 interface CellBestResult {
 	column: number;
 	row: number;
 	// 0 = up, 90 = right, 180 = down, 270 = left
-	direction: 0 | 90 | 180 | 270;
+	direction: Direction;
 	bestCost: number;
 	incomingCells: Cell[];
 }
 
+interface CellID {
+	column: number;
+	row: number;
+	direction: Direction;
+}
+
 interface CostAtDirection {
 	bestCost: number;
-	incomingCells: Cell[];
+	incomingCells: CellID[];
 }
 
 interface CellBestResult2 {
 	column: number;
 	row: number;
-	costByDirection: Map<0 | 90 | 180 | 270, CostAtDirection>;
+	costByDirection: Map<Direction, CostAtDirection>;
 }
 
 interface CellBestResultCandidates {
 	column: number;
 	row: number;
 	// 0 = up, 90 = right, 180 = down, 270 = left
-	direction: 0 | 90 | 180 | 270;
+	direction: Direction;
 	newCost: number;
 }
 
@@ -120,7 +128,7 @@ async function p2024day16_part1(input: string, ...params: any[]) {
 	//console.log(visitedBestResults[endY][endX].bestCost);
 	return visitedBestResults[endY][endX].bestCost;
 }
-function turningCost(newDirection: 0 | 90 | 180 | 270, oldDirection: 0 | 90 | 180 | 270) {
+function turningCost(newDirection: Direction, oldDirection: Direction) {
 	let diff = Math.abs(newDirection - oldDirection);
 	if (diff == 270) {
 		diff = 90;
@@ -137,147 +145,115 @@ async function p2024day16_part2(input: string, ...params: any[]) {
 			(cell, column) => ({
 				row, column,
 				costByDirection: new Map([
-					[0, { direction: 0, bestCost: 0, incomingCells: [] }],
-					[90, { direction: 90, bestCost: 0, incomingCells: [] }],
-					[180, { direction: 180, bestCost: 0, incomingCells: [] }],
-					[270, { direction: 270, bestCost: 0, incomingCells: [] }]
+					[0, { direction: 0, bestCost: -1, incomingCells: [] }],
+					[90, { direction: 90, bestCost: -1, incomingCells: [] }],
+					[180, { direction: 180, bestCost: -1, incomingCells: [] }],
+					[270, { direction: 270, bestCost: -1, incomingCells: [] }]
 				])
 			})));
 	let startX = board.filter(line => line.includes('S'))[0].indexOf('S');
 	let startY = board.findIndex(line => line.includes('S'));
 	let endX = board.filter(line => line.includes('E'))[0].indexOf('E');
 	let endY = board.findIndex(line => line.includes('E'));
-	visitedBestResults[startY][startX].costByDirection.get(0)!.bestCost = 0;
+	visitedBestResults[startY][startX].costByDirection.get(0)!.bestCost = -1;
 	visitedBestResults[startY][startX].costByDirection.get(90)!.bestCost = 0;
-	visitedBestResults[startY][startX].costByDirection.get(180)!.bestCost = 0;
-	visitedBestResults[startY][startX].costByDirection.get(270)!.bestCost = 0;
-	let cellsToVisit: Cell[] = [{ column: startX, row: startY }];
+	visitedBestResults[startY][startX].costByDirection.get(180)!.bestCost = -1;
+	visitedBestResults[startY][startX].costByDirection.get(270)!.bestCost = -1;
+	let cellsToVisit: CellID[] = [{ column: startX, row: startY, direction: 90 }];
 	let interation = 0;
 	while (cellsToVisit.length > 0) {
 		interation++;
-		let cellsToVisitNext: Cell[] = [];
+		let cellsToVisitNext: CellID[] = [];
 		cellsToVisit.forEach(cell => {
+			let moveForwardRow = cell.row;
+			let moveForwardColumn = cell.column;
+			if (cell.direction === 0) {
+				moveForwardRow--;
+			}
+			if (cell.direction === 90) {
+				moveForwardColumn++;
+			}
+			if (cell.direction === 180) {
+				moveForwardRow++;
+			}
+			if (cell.direction === 270) {
+				moveForwardColumn--;
+			}
 			const neighborsMovingForward: CellBestResultCandidates[] = [
 				{
-					row: cell.row - 1,
-					column: cell.column,
-					direction: 0,
-					newCost: visitedBestResults[cell.row][cell.column].costByDirection.get(0)!.bestCost + 1,
+					row: moveForwardRow,
+					column: moveForwardColumn,
+					direction: cell.direction,
+					newCost: visitedBestResults[cell.row][cell.column].costByDirection.get(cell.direction)!.bestCost + 1,
 				},
-				{
-					row: cell.row + 1,
-					column: cell.column,
-					direction: 180,
-					newCost: visitedBestResults[cell.row][cell.column].costByDirection.get(180)!.bestCost + 1,
-				},
-				{
-					row: cell.row,
-					column: cell.column - 1,
-					direction: 270,
-					newCost: visitedBestResults[cell.row][cell.column].costByDirection.get(270)!.bestCost + 1,
-				},
-				{
-					row: cell.row,
-					column: cell.column + 1,
-					direction: 90,
-					newCost: visitedBestResults[cell.row][cell.column].costByDirection.get(90)!.bestCost + 1,
-				}
 			];
 			const neighborsTurning: CellBestResultCandidates[] = [];
 			[0, 90, 180, 270].forEach((direction) => {
-				const typedDirection = direction as (0 | 90 | 180 | 270);
-				if (turningCost(typedDirection, 0) > 0) {
+				const typedDirection = direction as Direction;
+				if (typedDirection !== cell.direction) {
 					neighborsTurning.push({
 						row: cell.row,
 						column: cell.column,
 						direction: typedDirection,
-						newCost: visitedBestResults[cell.row][cell.column].costByDirection.get(typedDirection)!.bestCost +
-							turningCost(typedDirection, 0),
+						newCost: visitedBestResults[cell.row][cell.column].costByDirection.get(cell.direction)!.bestCost +
+							turningCost(typedDirection, cell.direction),
 					});
 				}
-				if (turningCost(typedDirection, 90) > 0) {
-					neighborsTurning.push({
-						row: cell.row,
-						column: cell.column,
-						direction: typedDirection,
-						newCost: visitedBestResults[cell.row][cell.column].costByDirection.get(typedDirection)!.bestCost +
-							turningCost(typedDirection, 90),
-					});
-				}
-				if (turningCost(typedDirection, 180) > 0) {
-					neighborsTurning.push({
-						row: cell.row,
-						column: cell.column,
-						direction: typedDirection,
-						newCost: visitedBestResults[cell.row][cell.column].costByDirection.get(typedDirection)!.bestCost +
-							turningCost(typedDirection, 180),
-					});
-				}
-				if (turningCost(typedDirection, 270) > 0) {
-					neighborsTurning.push({
-						row: cell.row,
-						column: cell.column,
-						direction: typedDirection,
-						newCost: visitedBestResults[cell.row][cell.column].costByDirection.get(typedDirection)!.bestCost +
-							turningCost(typedDirection, 270),
-					});
-				}
+
 			});
+			// console.log('neighborsTurning', neighborsTurning);
 			const neighbors = [...neighborsMovingForward, ...neighborsTurning];
 			for (const neighbor of neighbors) {
 				if (neighbor.row >= 0 && neighbor.row < board.length && neighbor.column >= 0 && neighbor.column < board[0].length) {
 					if (board[neighbor.row][neighbor.column] === '.' ||
 						board[neighbor.row][neighbor.column] === 'E' ||
 						board[neighbor.row][neighbor.column] === 'S') {
-						if (!visitedBestResults[neighbor.row][neighbor.column].costByDirection.has(neighbor.direction)) {
-							visitedBestResults[neighbor.row][neighbor.column].costByDirection.set(neighbor.direction, { bestCost: -1, incomingCells: [] });
-						}
 						const bestCostAtDirection = visitedBestResults[neighbor.row][neighbor.column].costByDirection.get(neighbor.direction)!;
-						if (bestCostAtDirection.bestCost == 0 ||
+						if (bestCostAtDirection.bestCost < 0 ||
 							bestCostAtDirection.bestCost > neighbor.newCost) {
 							bestCostAtDirection.bestCost = neighbor.newCost;
-							bestCostAtDirection.incomingCells.push({ column: cell.column, row: cell.row, cost: neighbor.newCost });
-							bestCostAtDirection.incomingCells =
-								bestCostAtDirection.incomingCells.filter(cell => cell.cost === neighbor.newCost);
-							cellsToVisitNext.push({ column: neighbor.column, row: neighbor.row });
+							bestCostAtDirection.incomingCells = [];
+							bestCostAtDirection.incomingCells.push({ column: cell.column, row: cell.row, direction: cell.direction });
+							cellsToVisitNext.push({ column: neighbor.column, row: neighbor.row, direction: neighbor.direction });
+						}
+						else if (bestCostAtDirection.bestCost < 0 ||
+							bestCostAtDirection.bestCost == neighbor.newCost) {
+							bestCostAtDirection.incomingCells.push({ column: cell.column, row: cell.row, direction: cell.direction });
+							cellsToVisitNext.push({ column: neighbor.column, row: neighbor.row, direction: neighbor.direction });
 						}
 					}
 				}
 			}
 		});
 		cellsToVisit = cellsToVisitNext;
-		console.log(interation);
-		//console.log(visitedBestResults.map(line => line.map(cell => cell.bestCost.toString().padStart(4, ' ')).join(' ')).join('\n'));
 	}
 
-	console.log('TEST UP', visitedBestResults[endY][endX].costByDirection.get(0)?.bestCost);
-	console.log('TEST RIGHT', visitedBestResults[endY][endX].costByDirection.get(90)?.bestCost);
-	console.log('TEST DOWN', visitedBestResults[endY][endX].costByDirection.get(180)?.bestCost);
-	console.log('TEST LEFT', visitedBestResults[endY][endX].costByDirection.get(270)?.bestCost);
-
-	// TODO: for each visitedBestResults look at costByDirection bestCost and leave only incomingCells with the bestCost
-	visitedBestResults.forEach(line => line.forEach(cell => {
-		const bestCost = Math.min(
-			cell.costByDirection.get(0)?.bestCost ?? Number.MAX_SAFE_INTEGER,
-			cell.costByDirection.get(90)?.bestCost ?? Number.MAX_SAFE_INTEGER,
-			cell.costByDirection.get(180)?.bestCost ?? Number.MAX_SAFE_INTEGER,
-			cell.costByDirection.get(270)?.bestCost ?? Number.MAX_SAFE_INTEGER
-		);
-		cell.costByDirection.forEach((costAtDirection, direction) => {
-			costAtDirection.incomingCells = costAtDirection.incomingCells.filter(cell => cell.cost === bestCost);
-		});
-	}));
+	const bestCostAtDestination = [
+		visitedBestResults[endY][endX].costByDirection.get(0)!.bestCost,
+		visitedBestResults[endY][endX].costByDirection.get(90)!.bestCost,
+		visitedBestResults[endY][endX].costByDirection.get(180)!.bestCost,
+		visitedBestResults[endY][endX].costByDirection.get(270)!.bestCost]
+		.filter(cost => cost >= 0)
+		.sort()[0];
+	// console.log('BEST COST AT DESTINATION', bestCostAtDestination);
+	// console.log('END UP', visitedBestResults[endY][endX].costByDirection.get(0)?.bestCost);
+	// console.log('END RIGHT', visitedBestResults[endY][endX].costByDirection.get(90)?.bestCost);
+	// console.log('END DOWN', visitedBestResults[endY][endX].costByDirection.get(180)?.bestCost);
+	// console.log('END LEFT', visitedBestResults[endY][endX].costByDirection.get(270)?.bestCost);
 
 	let numberOfVisitedCellsOnTheBestPaths = 1;
 	const visitedCells: boolean[][] = board.map(line => line.map(cell => false));
-	let incomingCells = [
-		...visitedBestResults[endY][endX].costByDirection.get(0)?.incomingCells ?? [],
-		...visitedBestResults[endY][endX].costByDirection.get(90)?.incomingCells ?? [],
-		...visitedBestResults[endY][endX].costByDirection.get(180)?.incomingCells ?? [],
-		...visitedBestResults[endY][endX].costByDirection.get(270)?.incomingCells ?? []
-	];
+	let incomingCells: CellID[] = [];
+	[0, 90, 180, 270].forEach((direction) => {
+		const typedDirection = direction as Direction;
+		if (visitedBestResults[endY][endX].costByDirection.get(typedDirection)!.bestCost === bestCostAtDestination) {
+			incomingCells.push(
+				...visitedBestResults[endY][endX].costByDirection.get(typedDirection)!.incomingCells ?? []
+			);
+		}
+	});
 	while (incomingCells.length > 0) {
-		const nextIncomingCells: Cell[] = [];
+		const nextIncomingCells: CellID[] = [];
 		incomingCells.forEach(cell => {
 			if (!visitedCells[cell.row][cell.column]) {
 				visitedCells[cell.row][cell.column] = true;
@@ -346,6 +322,9 @@ async function run() {
 			expected: `11048`
 		}
 	];
+
+	// Part 2 Answer: 528 - WRONG, TOO HIGH
+
 	const part2tests: TestCase[] = [
 		{
 			input: `###############
@@ -365,7 +344,7 @@ async function run() {
 					###############`,
 			expected: `45`
 		},
-		/*{
+		{
 			input: `#################
 					#...#...#...#..E#
 					#.#.#.#.#.#.#.#.#
@@ -384,7 +363,7 @@ async function run() {
 					#S#.............#
 					#################`,
 			expected: `64`
-		}*/
+		}
 	];
 
 	const [p1testsNormalized, p2testsNormalized] = normalizeTestCases(part1tests, part2tests);
@@ -404,22 +383,22 @@ async function run() {
 	test.endTests();
 
 	// Get input and run program while measuring performance
-	// const input = await util.getInput(DAY, YEAR);
+	const input = await util.getInput(DAY, YEAR);
 
-	// const part1Before = performance.now();
-	// const part1Solution = String(await p2024day16_part1(input));
-	// const part1After = performance.now();
+	const part1Before = performance.now();
+	const part1Solution = String(await p2024day16_part1(input));
+	const part1After = performance.now();
 
-	// const part2Before = performance.now()
-	// const part2Solution = String(await p2024day16_part2(input));
-	// const part2After = performance.now();
+	const part2Before = performance.now()
+	const part2Solution = String(await p2024day16_part2(input));
+	const part2After = performance.now();
 
-	// logSolution(16, 2024, part1Solution, part2Solution);
+	logSolution(16, 2024, part1Solution, part2Solution);
 
-	// log(chalk.gray("--- Performance ---"));
-	// log(chalk.gray(`Part 1: ${util.formatTime(part1After - part1Before)}`));
-	// log(chalk.gray(`Part 2: ${util.formatTime(part2After - part2Before)}`));
-	// log();
+	log(chalk.gray("--- Performance ---"));
+	log(chalk.gray(`Part 1: ${util.formatTime(part1After - part1Before)}`));
+	log(chalk.gray(`Part 2: ${util.formatTime(part2After - part2Before)}`));
+	log();
 }
 
 run()
