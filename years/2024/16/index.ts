@@ -242,6 +242,7 @@ async function p2024day16_part2(input: string, ...params: any[]) {
 	// console.log('END LEFT', visitedBestResults[endY][endX].costByDirection.get(270)?.bestCost);
 
 	let numberOfVisitedCellsOnTheBestPaths = 1;
+	const visitedCellAtEachDirection: boolean[][][] = board.map(line => line.map(cell => [0, 90, 180, 270].map(() => false)));
 	const visitedCells: boolean[][] = board.map(line => line.map(cell => false));
 	let incomingCells: CellID[] = [];
 	[0, 90, 180, 270].forEach((direction) => {
@@ -255,20 +256,20 @@ async function p2024day16_part2(input: string, ...params: any[]) {
 	while (incomingCells.length > 0) {
 		const nextIncomingCells: CellID[] = [];
 		incomingCells.forEach(cell => {
-			if (!visitedCells[cell.row][cell.column]) {
-				visitedCells[cell.row][cell.column] = true;
-				numberOfVisitedCellsOnTheBestPaths++;
+			if (!visitedCellAtEachDirection[cell.row][cell.column][cell.direction]) {
+				visitedCellAtEachDirection[cell.row][cell.column][cell.direction] = true;
+				if (!visitedCells[cell.row][cell.column]) {
+					visitedCells[cell.row][cell.column] = true;
+					numberOfVisitedCellsOnTheBestPaths++;
+				}
 				nextIncomingCells.push(
-					...visitedBestResults[cell.row][cell.column].costByDirection.get(0)?.incomingCells ?? [],
-					...visitedBestResults[cell.row][cell.column].costByDirection.get(90)?.incomingCells ?? [],
-					...visitedBestResults[cell.row][cell.column].costByDirection.get(180)?.incomingCells ?? [],
-					...visitedBestResults[cell.row][cell.column].costByDirection.get(270)?.incomingCells ?? [],
+					...visitedBestResults[cell.row][cell.column].costByDirection.get(cell.direction)?.incomingCells ?? [],
 				);
 			}
 		});
 		incomingCells = nextIncomingCells;
 	}
-	console.log(visitedCells.map(line => line.map(cell => cell ? 'X' : '.').join('')).join('\n'));
+	//console.log(visitedCells.map(line => line.map(cell => cell ? 'X' : '.').join('')).join('\n'));
 	return numberOfVisitedCellsOnTheBestPaths;
 }
 
