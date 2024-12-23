@@ -76,8 +76,8 @@ interface Buyer {
 	sequenceToPrice: Map<EncodedSequence, Price>;
 }
 
-function encodeSequence(secrets: number[]): EncodedSequence {
-	return secrets.join(",");
+function encodeSequence(fourSecrets: number[]): EncodedSequence {
+	return fourSecrets.join(",");
 }
 
 async function p2024day22_part2(input: string, ...params: any[]) {
@@ -108,7 +108,7 @@ async function p2024day22_part2(input: string, ...params: any[]) {
 				if (!buyer.sequenceToPrice.has(encodedSequence)) {
 					const currentPrice = buyer.prices[i];
 					if (encodedSequence == '-9,9,-1,0') {
-						console.log(buyer.secrets[0], i, encodedSequence, currentPrice);
+						//console.log(buyer.secrets[0], i, encodedSequence, currentPrice);
 					}
 					buyer.sequenceToPrice.set(encodedSequence, currentPrice);
 					const currentTotalPrice = sequenceToTotalPrice.get(encodedSequence) || 0;
@@ -120,7 +120,7 @@ async function p2024day22_part2(input: string, ...params: any[]) {
 	//console.log('sequenceToTotalPrice', sequenceToTotalPrice);
 	const bestSequence = [...sequenceToTotalPrice.entries()].reduce((best, [sequence, price]) => {
 		if (price > best) {
-			console.log('new best', sequence, price);
+			//console.log('new best', sequence, price);
 			return price;
 		}
 		return best;
