@@ -78,17 +78,9 @@ async function p2024day23_part1(input: string, ...params: any[]) {
 
 async function p2024day23_part2(input: string, ...params: any[]) {
 	const computerEdges: Array<string[]> = input.split("\n").map(edge => edge.split("-"));
-	let cliques = BronKerbosch(computerEdges as any);
-	let maxCliqueSize = 0;
-	let maxClique: string[] = [];
-	for (let i = 0; i < cliques.length; i++) {
-		if (cliques[i].length > maxCliqueSize) {
-			maxCliqueSize = cliques[i].length;
-			maxClique = cliques[i] as string[];
-		}
-	}
+	const cliques = BronKerbosch(computerEdges as Iterable<[string, string]>);
+	const maxClique = cliques.reduce((max, clique) => clique.length > max.length ? clique : max, []);
 	maxClique.sort();
-	console.log(maxCliqueSize, maxClique);
 	return maxClique.join(",");
 }
 
